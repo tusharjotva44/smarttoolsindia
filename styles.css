@@ -4,3 +4,6 @@
 
 /* Larger Age Calculator totals */
 .age-result-grid .result-chip span{font-size:11px}.age-result-grid .result-chip b{font-size:18px}
+
+/* EMI result labels only: keep numeric values unchanged */
+.emi-result-grid .result-chip span{font-size:12px}
