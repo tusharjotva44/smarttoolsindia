@@ -52,41 +52,31 @@
     $("#makeQr").onclick=()=>{const text=$("#qrText").value.trim();if(!text){toast("Enter a link or some text first.");return}if(typeof QRCode==="undefined"){toast("QR library did not load. Check your internet connection.");return}const out=$("#qrResult");out.innerHTML="";const box=document.createElement("div");out.appendChild(box);try{new QRCode(box,{text,width:Number($("#qrSize").value),height:Number($("#qrSize").value),correctLevel:QRCode.CorrectLevel[$("#qrLevel").value]});const dl=document.createElement("button");dl.className="tool-btn secondary";dl.textContent="Download PNG";dl.onclick=()=>{const img=box.querySelector("img"),canvas=box.querySelector("canvas"),url=img&&img.src?img.src:canvas?canvas.toDataURL("image/png"):"";if(!url){toast("Could not create a downloadable image.");return}downloadUrl(url,"smarttools-qr.png")};out.appendChild(dl)}catch(e){toast("Could not generate this QR code.")}};
   }
   function renderImage(){
-    modalContent.innerHTML='<div class="drop-zone"><strong>Choose an image</strong><p>JPG, PNG, WebP and other browser-supported image formats</p><input type="file" id="imageFile" accept="image/*"></div><div id="imageControls" hidden><div class="field-grid">'+selectField("Output format","imageFormat",[["image/jpeg","JPG"],["image/png","PNG"],["image/webp","WebP"]])+'<div class="field-pair">'+field("Compress image to","targetSize","number","100",'min="1" step="any"')+selectField("Size unit","targetUnit",[["KB","KB"],["MB","MB"]])+'</div><div class="field-pair">'+field("Width (px)","imageWidth","number","",'min="1"')+field("Height (px)","imageHeight","number","",'min="1"')+'</div></div><label class="field-label"><input type="checkbox" id="keepRatio" checked> Keep aspect ratio</label><div class="button-row"><button class="tool-btn" id="processImage">Compress image ↗</button></div><div id="imageResult"></div></div><p class="hint">Enter the maximum size you want in KB or MB. The tool tries to reach that size by adjusting image quality and, if needed, dimensions. Exact size is not guaranteed for every image or format.</p>';    let img=null,originalName="image";
+    modalContent.innerHTML='<div class="drop-zone"><strong>Choose an image</strong><p>JPG, PNG, WebP and other browser-supported image formats</p><input type="file" id="imageFile" accept="image/*"></div><div id="imageControls" hidden><div class="field-grid">'+selectField("Output format","imageFormat",[["image/jpeg","JPG"],["image/png","PNG"],["image/webp","WebP"]])+'<div class="field-pair">'+field("Compress image to","targetSize","number","100",'min="1" step="any"')+selectField("Size unit","targetUnit",[["KB","KB"],["MB","MB"]])+'</div><div class="field-pair">'+field("Width (px)","imageWidth","number","",'min="1"')+field("Height (px)","imageHeight","number","",'min="1"')+'</div></div><label class="field-label"><input type="checkbox" id="keepRatio" checked> Keep aspect ratio</label><div class="button-row"><button class="tool-btn" id="processImage">Compress image ↗</button></div><div id="imageResult"></div></div><p class="hint">The tool keeps the original pixel dimensions and does not intentionally lower quality to meet the target size. Exact file size may not be possible without quality or resolution changes; if the target cannot be reached, the result may remain larger than requested.</p>';    let img=null,originalName="image";
     $("#imageFile").onchange=()=>{const file=$("#imageFile").files[0];if(!file)return;if(!file.type.startsWith("image/")){toast("Choose a valid image file.");return}if(img&&img.src.startsWith("blob:"))URL.revokeObjectURL(img.src);originalName=file.name.replace(/\\.[^.]+$/,"")||"image";img=new Image();img.onload=()=>{$("#imageControls").hidden=false;$("#imageWidth").value=img.naturalWidth;$("#imageHeight").value=img.naturalHeight;$("#imageResult").innerHTML=panel("Original image",fmt(file.size/1024)+" KB",img.naturalWidth+" × "+img.naturalHeight+" px")};img.onerror=()=>toast("This image could not be opened.");img.src=URL.createObjectURL(file)};
     $("#imageWidth").addEventListener("input",()=>{if($("#keepRatio").checked&&img&&img.naturalWidth){const w=safeNum($("#imageWidth").value);if(w>0)$("#imageHeight").value=Math.max(1,Math.round(w*img.naturalHeight/img.naturalWidth))}});
     $("#imageHeight").addEventListener("input",()=>{if($("#keepRatio").checked&&img&&img.naturalHeight){const h=safeNum($("#imageHeight").value);if(h>0)$("#imageWidth").value=Math.max(1,Math.round(h*img.naturalWidth/img.naturalHeight))}});
     function canvasBlob(canvas,type,quality){return new Promise(resolve=>canvas.toBlob(resolve,type,quality))}
-    $("#processImage").onclick=async()=>{if(!img)return;let w=safeNum($("#imageWidth").value),h=safeNum($("#imageHeight").value);const size=safeNum($("#targetSize").value),unit=$("#targetUnit").value,format=$("#imageFormat").value;
+    $("#processImage").onclick=async()=>{if(!img)return;const w=img.naturalWidth,h=img.naturalHeight,size=safeNum($("#targetSize").value),unit=$("#targetUnit").value,format=$("#imageFormat").value;
       if(!size||size<=0){toast("Enter the desired image size.");return}
       const targetBytes=size*(unit==="MB"?1024*1024:1024);
       if(targetBytes<1024){toast("Desired size must be at least 1 KB.");return}
-      if(!w||!h||w<1||h<1||w>12000||h>12000){toast("Enter valid dimensions between 1 and 12000 pixels.");return}
+      // Lock output dimensions to the original image dimensions.
+      $("#imageWidth").value=w;$("#imageHeight").value=h;
       const btn=$("#processImage");btn.disabled=true;btn.textContent="Compressing…";
       try{
-        let canvas=document.createElement("canvas"),ctx,blob=null,quality=0.92,attempt=0;
-        const draw=()=>{canvas.width=Math.max(1,Math.round(w));canvas.height=Math.max(1,Math.round(h));ctx=canvas.getContext("2d");if(format==="image/jpeg"){ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height)}ctx.drawImage(img,0,0,canvas.width,canvas.height)};
-        draw();blob=await canvasBlob(canvas,format,quality);
+        const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext("2d");
+        if(format==="image/jpeg"){ctx.fillStyle="#fff";ctx.fillRect(0,0,w,h)}
+        ctx.drawImage(img,0,0,w,h);
+        // Use maximum encoder quality; never reduce dimensions or quality to chase a target size.
+        const blob=await canvasBlob(canvas,format,1);
         if(!blob)throw new Error("Could not export image in this format.");
-        while(blob.size>targetBytes&&attempt<30){
-          attempt++;
-          if(format!=="image/png"&&quality>0.12){
-            quality=Math.max(0.1,quality-0.08);
-          }else{
-            const scale=Math.min(0.9,Math.sqrt(targetBytes/blob.size)*0.92);
-            const nextW=Math.max(1,Math.floor(w*scale)),nextH=Math.max(1,Math.floor(h*scale));
-            if(nextW===w&&nextH===h)break;
-            w=nextW;h=nextH;draw();quality=format==="image/png"?undefined:Math.max(0.1,quality-0.03);
-          }
-          blob=await canvasBlob(canvas,format,quality);
-          if(!blob)throw new Error("Could not export image in this format.");
-          if(w===1&&h===1&&blob.size>targetBytes)break;
-        }
         const url=URL.createObjectURL(blob),ext=format==="image/jpeg"?"jpg":format==="image/png"?"png":"webp",met=blob.size<=targetBytes;
-        const note="New dimensions: "+canvas.width+" × "+canvas.height+" px • "+(met?"Desired size reached":"Could not reach desired size exactly");
+        const note="Resolution kept: "+w+" × "+h+" px • "+(met?"Desired size reached":"Target size not reached without reducing quality or resolution");
         $("#imageResult").innerHTML=panel("Compressed image",fmt(blob.size/1024)+" KB",note)+'<div class="button-row"><button class="tool-btn" id="downloadImage">Download image</button></div>';
         $("#downloadImage").onclick=()=>downloadUrl(url,originalName+"-smarttools."+ext);
-        if(!met)toast("Could not reach that size exactly. Try a larger size or JPG/WebP.");
+        if(!met)toast("Could not reach the target size without reducing quality or resolution.");
       }catch(err){toast(String(err&&err.message||"Image processing failed."))}
       finally{btn.disabled=false;btn.textContent="Compress image ↗"}
     };
