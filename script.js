@@ -22,6 +22,7 @@
       let y=asof.getFullYear()-birth.getFullYear(),m=asof.getMonth()-birth.getMonth(),d=asof.getDate()-birth.getDate();if(d<0){m--;d+=daysInMonth(asof.getFullYear(),asof.getMonth()-1)}if(m<0){y--;m+=12}
       const totalDays=Math.floor((Date.UTC(asof.getFullYear(),asof.getMonth(),asof.getDate())-Date.UTC(birth.getFullYear(),birth.getMonth(),birth.getDate()))/86400000);
       out.innerHTML=panel("Your age",y+" years, "+m+" months, "+d+" days")+'<div class="result-grid"><div class="result-chip"><span>Total months</span><b>'+fmt(y*12+m)+'</b></div><div class="result-chip"><span>Total weeks</span><b>'+fmt(Math.floor(totalDays/7))+'</b></div><div class="result-chip"><span>Total days</span><b>'+fmt(totalDays)+'</b></div></div>'};
+    ["birthDate","asOfDate"].forEach(id=>$("#"+id).addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#calcAge").click()}}));
   }
   function localDate(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
   function parseDate(s){if(!s)return null;const p=s.split("-").map(Number);if(p.length!==3)return null;const d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2]?d:null}
