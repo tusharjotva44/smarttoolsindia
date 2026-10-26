@@ -39,17 +39,24 @@
     $("#calcEmi").onclick=()=>{const P=safeNum($("#loanAmount").value),annual=safeNum($("#loanRate").value),years=safeNum($("#loanYears").value);if(P===null||annual===null||years===null||P<=0||annual<0||years<=0){toast("Enter a positive loan amount and tenure, with a valid interest rate.");return}const n=Math.round(years*12),r=annual/1200,emi=r===0?P/n:P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1),total=emi*n,interest=total-P;$("#emiResult").innerHTML=panel("Estimated monthly EMI","₹"+fmt(emi))+'<div class="result-grid emi-result-grid"><div class="result-chip"><span>Principal amount</span><b>₹'+fmt(P)+'</b></div><div class="result-chip"><span>Total interest</span><b>₹'+fmt(interest)+'</b></div><div class="result-chip"><span>Total repayment</span><b>₹'+fmt(total)+'</b></div></div>'};
   }
   function renderGst(){
-    modalContent.innerHTML=selectField("GST calculation","gstMode",[["add","Add GST (price before GST)"],["remove","Remove GST (price includes GST)"]])+'<div class="field-grid">'+field("Amount (₹)","gstAmount","number","1000",'min="0" step="any"')+selectField("GST rate","gstRate",[["0","0%"],["0.25","0.25%"],["3","3%"],["5","5%"],["12","12%"],["18","18%"],["28","28%"]])+'</div><button class="tool-btn" id="calcGst">Calculate GST ↗</button><div id="gstResult"></div><p class="hint">Choose the applicable GST rate for your goods or service. This calculator provides an estimate; confirm the correct rate and tax treatment for your transaction.</p>';
-    $("#gstRate").value="18";
-    $("#calcGst").onclick=()=>{
-      const amount=safeNum($("#gstAmount").value),rate=safeNum($("#gstRate").value),mode=$("#gstMode").value;
-      if(amount===null||amount<0||rate===null){toast("Enter a valid amount and GST rate.");return}
-      const tax=mode==="add"?amount*rate/100:amount-(amount/(1+rate/100));
-      const taxable=mode==="add"?amount:amount-tax;
+    modalContent.innerHTML=selectField("GST calculation","gstMode",[["add","Add GST (price before GST)"],["remove","Remove GST (price includes GST)"]])+'<div class="field-grid">'+field("Amount before GST (₹)","gstAmount","number","1000",'min="0" step="any"')+selectField("GST rate","gstRate",[["0","0%"],["0.25","0.25%"],["3","3%"],["5","5%"],["12","12%"],["18","18%"],["28","28%"]])+'</div><button type="button" class="tool-btn" id="calcGst">Calculate GST ↗</button><div id="gstResult" aria-live="polite"></div><p class="hint">Choose the applicable GST rate for your goods or service. This calculator provides an estimate; confirm the correct rate and tax treatment for your transaction.</p>';
+    const amountInput=$("#gstAmount"), modeSelect=$("#gstMode"), rateSelect=$("#gstRate"), result=$("#gstResult"), calcButton=$("#calcGst");
+    rateSelect.value="18";
+    function calculateGst(){
+      const amountText=amountInput.value.trim(), amount=safeNum(amountText), rate=safeNum(rateSelect.value), mode=modeSelect.value;
+      if(amountText===""||amount===null||amount<0||rate===null){
+        result.innerHTML=panel("Check your amount","Enter a valid amount of ₹0 or more.");
+        return;
+      }
+      const taxable=mode==="add"?amount:amount/(1+rate/100);
+      const tax=mode==="add"?amount*rate/100:amount-taxable;
       const total=mode==="add"?amount+tax:amount;
-      $("#gstResult").innerHTML=panel(mode==="add"?"Total amount including GST":"Taxable amount before GST","₹"+fmt(mode==="add"?total:taxable))+'<div class="result-grid"><div class="result-chip"><span>Taxable amount</span><b>₹'+fmt(taxable)+'</b></div><div class="result-chip"><span>GST ('+fmt(rate,2)+'%)</span><b>₹'+fmt(tax)+'</b></div><div class="result-chip"><span>Total amount</span><b>₹'+fmt(total)+'</b></div></div>';
-    };
-    $("#gstMode").onchange=()=>{$("#gstAmount").previousElementSibling.textContent=$("#gstMode").value==="add"?"Amount before GST (₹)":"Amount including GST (₹)";$("#gstResult").innerHTML=""};
+      result.innerHTML=panel(mode==="add"?"Total including GST":"Taxable amount before GST","₹"+fmt(total))+'<div class="result-grid"><div class="result-chip"><span>Taxable amount</span><b>₹'+fmt(taxable)+'</b></div><div class="result-chip"><span>GST ('+fmt(rate,2)+'%)</span><b>₹'+fmt(tax)+'</b></div><div class="result-chip"><span>Total amount</span><b>₹'+fmt(total)+'</b></div></div>';
+    }
+    calcButton.addEventListener("click",calculateGst);
+    amountInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();calculateGst()}});
+    modeSelect.addEventListener("change",()=>{amountInput.previousElementSibling.textContent=modeSelect.value==="add"?"Amount before GST (₹)":"Amount including GST (₹)";result.innerHTML="";});
+    rateSelect.addEventListener("change",()=>{result.innerHTML="";});
   }
   function renderWords(){
     modalContent.innerHTML='<div class="field"><label for="wordText">Paste or type your text</label><textarea id="wordText" placeholder="Start typing here…"></textarea></div><div class="result-grid"><div class="result-chip"><span>Words</span><b id="wordCount">0</b></div><div class="result-chip"><span>Characters</span><b id="charCount">0</b></div><div class="result-chip"><span>No spaces</span><b id="charNoSpace">0</b></div><div class="result-chip"><span>Sentences</span><b id="sentenceCount">0</b></div><div class="result-chip"><span>Paragraphs</span><b id="paragraphCount">0</b></div><div class="result-chip"><span>Reading time</span><b id="readTime">0 min</b></div></div><div class="button-row"><button class="tool-btn secondary" id="clearWords">Clear text</button><button class="tool-btn secondary" id="copyWords">Copy stats</button></div>';
