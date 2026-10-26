@@ -53,10 +53,12 @@
       const total=mode==="add"?amount+tax:amount;
       result.innerHTML=panel(mode==="add"?"Total including GST":"Taxable amount before GST","₹"+fmt(total))+'<div class="result-grid"><div class="result-chip"><span>Taxable amount</span><b>₹'+fmt(taxable)+'</b></div><div class="result-chip"><span>GST ('+fmt(rate,2)+'%)</span><b>₹'+fmt(tax)+'</b></div><div class="result-chip"><span>Total amount</span><b>₹'+fmt(total)+'</b></div></div>';
     }
-    calcButton.addEventListener("click",calculateGst);
+    calcButton.onclick=calculateGst;
+    amountInput.addEventListener("input",calculateGst);
     amountInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();calculateGst()}});
-    modeSelect.addEventListener("change",()=>{amountInput.previousElementSibling.textContent=modeSelect.value==="add"?"Amount before GST (₹)":"Amount including GST (₹)";result.innerHTML="";});
-    rateSelect.addEventListener("change",()=>{result.innerHTML="";});
+    modeSelect.addEventListener("change",()=>{amountInput.previousElementSibling.textContent=modeSelect.value==="add"?"Amount before GST (₹)":"Amount including GST (₹)";calculateGst();});
+    rateSelect.addEventListener("change",calculateGst);
+    calculateGst();
   }
   function renderWords(){
     modalContent.innerHTML='<div class="field"><label for="wordText">Paste or type your text</label><textarea id="wordText" placeholder="Start typing here…"></textarea></div><div class="result-grid"><div class="result-chip"><span>Words</span><b id="wordCount">0</b></div><div class="result-chip"><span>Characters</span><b id="charCount">0</b></div><div class="result-chip"><span>No spaces</span><b id="charNoSpace">0</b></div><div class="result-chip"><span>Sentences</span><b id="sentenceCount">0</b></div><div class="result-chip"><span>Paragraphs</span><b id="paragraphCount">0</b></div><div class="result-chip"><span>Reading time</span><b id="readTime">0 min</b></div></div><div class="button-row"><button class="tool-btn secondary" id="clearWords">Clear text</button><button class="tool-btn secondary" id="copyWords">Copy stats</button></div>';
