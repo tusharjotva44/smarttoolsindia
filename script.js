@@ -67,9 +67,9 @@
     modalContent.innerHTML =
       '<p class="hint invoice-intro">Create a clean invoice, calculate GST and discount automatically, then download it as a PDF or print it. Your entries stay in this browser.</p>'+
       '<div class="invoice-section-title">Your business</div>'+
-      '<div class="field-grid">'+field("Business / shop name","invBusiness","text","","placeholder=\"e.g. Shree Enterprise\" required")+field("Phone or email","invContact","text","","placeholder=\"Contact details\"")+field("Business address","invAddress","text","","placeholder=\"Address\"")+field("GSTIN (optional)","invGstin","text","","placeholder=\"GST identification number\" maxlength=\"15\"")+'</div>'+
+      '<div class="field-grid">'+field("Business / shop name","invBusiness","text","","placeholder=\"e.g. Shree Enterprise\" required")+field("Business phone number","invContact","tel","","placeholder=\"10-digit phone number\" inputmode=\"numeric\" maxlength=\"10\" pattern=\"[0-9]{10}\"")+field("Business address","invAddress","text","","placeholder=\"Address\"")+field("GSTIN (optional)","invGstin","text","","placeholder=\"GST identification number\" maxlength=\"15\"")+'</div>'+
       '<div class="invoice-section-title">Bill to</div>'+
-      '<div class="field-grid">'+field("Customer name","invCustomer","text","","placeholder=\"Customer / company name\" required")+field("Customer phone or email","invCustomerContact","text","","placeholder=\"Contact details\"")+field("Customer address","invCustomerAddress","text","","placeholder=\"Billing address\"")+field("Invoice number","invNumber","text",invoiceNo,'maxlength="40"')+field("Invoice date","invDate","date",today)+field("Due date","invDue","date",today)+'</div>'+
+      '<div class="field-grid">'+field("Customer name","invCustomer","text","","placeholder=\"Customer / company name\" required")+field("Customer phone number","invCustomerContact","tel","","placeholder=\"10-digit phone number\" inputmode=\"numeric\" maxlength=\"10\" pattern=\"[0-9]{10}\"")+field("Customer address","invCustomerAddress","text","","placeholder=\"Billing address\"")+field("Invoice number","invNumber","text",invoiceNo,'maxlength="40"')+field("Invoice date","invDate","date",today)+field("Due date","invDue","date",today)+'</div>'+
       '<div class="invoice-section-title">Items / services</div>'+
       '<div class="invoice-items-wrap"><table class="invoice-items-table"><thead><tr><th>Item / service</th><th>Qty</th><th>Rate (₹)</th><th>Amount</th><th></th></tr></thead><tbody id="invItems"></tbody></table></div>'+
       '<div class="button-row invoice-controls"><button type="button" class="tool-btn secondary" id="invAddItem">+ Add item</button></div>'+
@@ -78,10 +78,12 @@
       '<div id="invTotals" class="invoice-totals"></div>'+
       '<div class="button-row invoice-actions"><button type="button" class="tool-btn" id="invDownload">Download PDF ↓</button><button type="button" class="tool-btn secondary" id="invPrint">Print invoice ↗</button></div>'+
       '<p class="hint">Before sending, verify your business details, invoice number, applicable GST rate and tax rules. This tool creates a basic invoice and does not verify tax compliance.</p>';
+    const businessPhoneInput=$("#invContact");
     const customerContactInput=$("#invCustomerContact");
-    customerContactInput.addEventListener("input",()=>{
-      const value=customerContactInput.value;
-      if(/^\\d+$/.test(value)&&value.length>10){customerContactInput.value=value.slice(0,10)}
+    [businessPhoneInput,customerContactInput].forEach(input=>{
+      input.addEventListener("input",()=>{
+        input.value=input.value.replace(/\\D/g,"").slice(0,10);
+      });
     });
     const itemsBody=$("#invItems");
     let nextItemId=0;
@@ -122,7 +124,8 @@
       const data=readInvoice();
       if(!data.business){toast("Enter your business or shop name first.");$("#invBusiness").focus();return null}
       if(!data.customer){toast("Enter the customer name first.");$("#invCustomer").focus();return null}
-      if(/^\\d+$/.test(data.customerContact)&&data.customerContact.length!==10){toast("Customer phone number must be exactly 10 digits.");customerContactInput.focus();return null}
+      if(!/^\\d{10}$/.test(data.contact)){toast("Business phone number must be exactly 10 digits.");businessPhoneInput.focus();return null}
+      if(!/^\\d{10}$/.test(data.customerContact)){toast("Customer phone number must be exactly 10 digits.");customerContactInput.focus();return null}
       if(!data.number){toast("Enter an invoice number.");$("#invNumber").focus();return null}
       if(!data.rows.some(item=>item.name&&item.qty>0)){toast("Add at least one named item with quantity above zero.");return null}
       if(data.rows.some(item=>item.qty<0||item.rate<0)||data.discountPct<0||data.discountPct>100){toast("Please check quantity, rate and discount values.");return null}
