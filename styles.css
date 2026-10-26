@@ -10,3 +10,24 @@
 
 /* Make the explanatory notes below all tools easier to read */
 .hint{font-size:12px;line-height:1.8}
+
+
+/* Invoice Generator */
+.invoice-intro{margin:0 0 18px}
+.invoice-section-title{font:800 14px Manrope,sans-serif;color:#332a2b;margin:22px 0 12px;padding-bottom:8px;border-bottom:1px solid #f0e6df}
+.invoice-items-wrap{width:100%;overflow-x:auto;border:1px solid #eee7e4;border-radius:12px}
+.invoice-items-table{width:100%;border-collapse:collapse;min-width:470px;font-size:11px}
+.invoice-items-table th{background:#fff7f0;color:#79675d;text-align:left;font-size:10px;padding:10px 8px}
+.invoice-items-table td{padding:7px 5px;border-top:1px solid #f1ece9}
+.invoice-items-table td:first-child{min-width:150px}
+.invoice-items-table input{width:100%;min-width:0;padding:9px 7px;border:1px solid #e9e2de;border-radius:8px;font-size:11px}
+.invoice-items-table td:nth-child(2){width:70px}.invoice-items-table td:nth-child(3){width:105px}.invoice-items-table td:nth-child(4){white-space:nowrap;font-weight:700;color:#51453f;padding:7px}
+.inv-remove{border:0;background:#fff0ee;color:#c24135;border-radius:7px;width:28px;height:30px;font-size:19px}
+.invoice-controls{margin:10px 0 14px}.invoice-options{margin-top:16px}
+.invoice-totals{max-width:350px;margin:18px 0 0 auto;padding:14px;background:#fffaf6;border:1px solid #f4e7dd;border-radius:12px}
+.invoice-total-row{display:flex;justify-content:space-between;gap:16px;padding:7px 0;font-size:12px;color:#6e6260}
+.invoice-total-row b{color:#342d2d;text-align:right;font-variant-numeric:tabular-nums}
+.invoice-grand-total{border-top:1px solid #ead8ca;margin-top:5px;padding-top:12px;font-weight:800;font-size:15px;color:#c6530d}
+.invoice-grand-total b{color:#c6530d;font-size:17px}
+.invoice-actions{margin-top:18px}
+@media(max-width:700px){.invoice-items-table{min-width:450px}.invoice-totals{max-width:none}.invoice-section-title{margin-top:19px}}
