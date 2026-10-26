@@ -4,15 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f97316">
-  <meta name="description" content="SmartTools India — simple, fast, privacy-friendly online tools for images, PDFs, calculations, text, QR codes, unit conversion and GST.">
+  <meta name="description" content="SmartTools India — simple, fast, privacy-friendly online tools for images, PDFs, calculations, text, QR codes, unit conversion, GST and invoice generation.">
   <title>SmartTools India — Everyday tools, made simple</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261026-1">
+  <link rel="stylesheet" href="styles.css?v=20261026-2">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script defer src="script.js?v=20261026-1"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="script.js?v=20261026-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -29,7 +30,7 @@
         <h1>Small tools.<br><span>Big time savings.</span></h1>
         <p class="hero-copy">Everything you need to get little tasks done — from images and PDFs to quick calculations. Simple, speedy, and right in your browser.</p>
         <div class="hero-actions"><a class="btn btn-primary" href="#tools">Explore all tools <span>↓</span></a><div class="privacy-note"><span class="privacy-icon">✓</span><span>Simple tools, no account needed</span></div></div>
-        <div class="hero-stats"><div><strong>09</strong><span>Useful tools</span></div><i></i><div><strong>100%</strong><span>Browser-based UI</span></div><i></i><div><strong>Free</strong><span>To get started</span></div></div>
+        <div class="hero-stats"><div><strong>10</strong><span>Useful tools</span></div><i></i><div><strong>100%</strong><span>Browser-based UI</span></div><i></i><div><strong>Free</strong><span>To get started</span></div></div>
       </div>
       <div class="hero-art" aria-hidden="true">
         <div class="art-grid"></div><div class="float-card float-card-top"><span class="mini-icon orange">▧</span><div><b>Image tools</b><small>Resize in a few clicks</small></div><span class="float-check">✓</span></div>
@@ -50,6 +51,7 @@
         <button class="tool-card" data-tool="qr" style="--card-accent:#9859c7;--card-tint:#f6edff"><span class="tool-icon">▦</span><span class="tool-number">07 / SHARE</span><strong>QR Code Generator</strong><span class="tool-description">Turn a link or message into a downloadable QR code.</span><span class="tool-link">Create a QR code <b>↗</b></span><span class="card-decoration qr-decoration">▦</span></button>
         <button class="tool-card" data-tool="units" style="--card-accent:#0e9bb5;--card-tint:#e5f8fc"><span class="tool-icon">⇄</span><span class="tool-number">08 / CONVERT</span><strong>Unit Converter</strong><span class="tool-description">Convert length, weight, temperature and more.</span><span class="tool-link">Convert units <b>↗</b></span><span class="card-decoration units-decoration">⇄</span></button>
         <button class="tool-card" data-tool="gst" style="--card-accent:#159f83;--card-tint:#e7f8f3"><span class="tool-icon">₹</span><span class="tool-number">09 / FINANCE</span><strong>GST Calculator</strong><span class="tool-description">Add or remove GST and calculate the tax amount instantly.</span><span class="tool-link">Calculate GST <b>↗</b></span><span class="card-decoration percent-decoration">GST</span></button>
+        <button class="tool-card" data-tool="invoice" style="--card-accent:#d97706;--card-tint:#fff5df"><span class="tool-icon">▤</span><span class="tool-number">10 / BUSINESS</span><strong>Invoice Generator</strong><span class="tool-description">Create professional invoices with items, GST, discount and PDF download.</span><span class="tool-link">Create invoice <b>↗</b></span><span class="card-decoration pdf-decoration">₹</span></button>
       </div>
     </section>
 
