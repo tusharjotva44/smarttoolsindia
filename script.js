@@ -115,9 +115,9 @@
       const data=readInvoice();
       Array.from(itemsBody.querySelectorAll("tr")).forEach((tr,i)=>{const item=data.rows[i];tr.querySelector(".inv-line-total").textContent="₹"+fmt(item.amount,2)});
       $("#invTotals").innerHTML='<div class="invoice-total-row"><span>Subtotal</span><b>₹'+fmt(data.subtotal,2)+'</b></div>'+
-        '<div class="invoice-total-row"><span>Discount ('+fmt(data.discountPct,2)+'%)</span><b>− ₹'+fmt(data.discount,2)+'</b></div>'+
+        (data.discountPct>0?'<div class="invoice-total-row"><span>Discount ('+fmt(data.discountPct,2)+'%)</span><b>− ₹'+fmt(data.discount,2)+'</b></div>':'')+
         '<div class="invoice-total-row"><span>Taxable amount</span><b>₹'+fmt(data.taxable,2)+'</b></div>'+
-        '<div class="invoice-total-row"><span>GST ('+fmt(data.gstRate,2)+'%)</span><b>₹'+fmt(data.tax,2)+'</b></div>'+
+        (data.gstRate>0?'<div class="invoice-total-row"><span>GST ('+fmt(data.gstRate,2)+'%)</span><b>₹'+fmt(data.tax,2)+'</b></div>':'')+
         '<div class="invoice-total-row invoice-grand-total"><span>Total due</span><b>₹'+fmt(data.total,2)+'</b></div>';
     }
     function validInvoice(){
