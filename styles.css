@@ -7,3 +7,6 @@
 
 /* EMI result labels only: keep numeric values unchanged */
 .emi-result-grid .result-chip span{font-size:12px}
+
+/* Make the explanatory notes below all tools easier to read */
+.hint{font-size:12px;line-height:1.8}
