@@ -95,7 +95,7 @@
         name:tr.querySelector(".inv-item-name").value.trim(),
         qty:Math.max(0,safeNum(tr.querySelector(".inv-item-qty").value)||0),
         rate:Math.max(0,safeNum(tr.querySelector(".inv-item-rate").value)||0)
-      })).map(item=>({...item,amount:item.qty*item.rate}));
+      })).map(item=>({...item,amount:item.name?item.qty*item.rate:0}));
       const subtotal=rows.reduce((sum,item)=>sum+item.amount,0);
       const discountPct=Math.min(100,Math.max(0,safeNum($("#invDiscount").value)||0));
       const discount=subtotal*discountPct/100;
@@ -128,7 +128,7 @@
       return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(data.number)+'</title><style>body{font:14px Arial,sans-serif;color:#222;margin:36px}h1{color:#d95e0b;margin-bottom:6px}h2{font-size:16px;margin-top:28px}p{margin:5px 0;line-height:1.45}.columns{display:flex;gap:40px;justify-content:space-between}.columns>div{flex:1}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border-bottom:1px solid #ddd;padding:10px 8px;text-align:left}th{background:#fff4eb}.totals{width:min(100%,340px);margin:20px 0 0 auto}.totals p{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:7px 0}.totals .grand{font-size:19px;font-weight:bold;color:#d95e0b}.notes{white-space:pre-wrap;margin-top:24px}@media print{body{margin:15mm}}</style></head><body><h1>INVOICE</h1><p><strong>Invoice #:</strong> '+esc(data.number)+'</p><p><strong>Date:</strong> '+esc(data.date||"—")+' &nbsp; <strong>Due:</strong> '+esc(data.due||"—")+'</p><div class="columns"><div><h2>From</h2><p><strong>'+esc(data.business)+'</strong></p>'+detail("Address",data.address)+detail("Contact",data.contact)+detail("GSTIN",data.gstin)+'</div><div><h2>Bill to</h2><p><strong>'+esc(data.customer)+'</strong></p>'+detail("Address",data.customerAddress)+detail("Contact",data.customerContact)+'</div></div><table><thead><tr><th>Item / service</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead><tbody>'+rows+'</tbody></table><div class="totals"><p><span>Subtotal</span><strong>₹'+fmt(data.subtotal,2)+'</strong></p><p><span>Discount ('+fmt(data.discountPct,2)+'%)</span><strong>− ₹'+fmt(data.discount,2)+'</strong></p><p><span>Taxable amount</span><strong>₹'+fmt(data.taxable,2)+'</strong></p><p><span>GST ('+fmt(data.gstRate,2)+'%)</span><strong>₹'+fmt(data.tax,2)+'</strong></p><p class="grand"><span>Total due</span><strong>₹'+fmt(data.total,2)+'</strong></p></div>'+(data.notes?'<div class="notes"><h2>Notes / payment instructions</h2>'+esc(data.notes)+'</div>':"")+'<p style="margin-top:32px;color:#777">Thank you for your business.</p></body></html>';
     }
     $("#invAddItem").onclick=()=>addItem("","1","0");
-    ["invDiscount","invGstRate","invBusiness","invContact","invAddress","invGstin","invCustomer","invCustomerContact","invCustomerAddress","invNumber","invDate","invDue","invNotes"].forEach(id=>$("#"+id).addEventListener("input",updateInvoice));
+    ["invDiscount","invGstRate","invBusiness","invContact","invAddress","invGstin","invCustomer","invCustomerContact","invCustomerAddress","invNumber","invDate","invDue","invNotes"].forEach(id=>{const el=$("#"+id);el.addEventListener("input",updateInvoice);el.addEventListener("change",updateInvoice)});
     $("#invDownload").onclick=()=>{
       const data=validInvoice();if(!data)return;
       if(!window.jspdf||!window.jspdf.jsPDF){toast("PDF library did not load. Please check your internet and try Print invoice.");return}
