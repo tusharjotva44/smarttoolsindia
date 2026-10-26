@@ -78,6 +78,11 @@
       '<div id="invTotals" class="invoice-totals"></div>'+
       '<div class="button-row invoice-actions"><button type="button" class="tool-btn" id="invDownload">Download PDF ↓</button><button type="button" class="tool-btn secondary" id="invPrint">Print invoice ↗</button></div>'+
       '<p class="hint">Before sending, verify your business details, invoice number, applicable GST rate and tax rules. This tool creates a basic invoice and does not verify tax compliance.</p>';
+    const customerContactInput=$("#invCustomerContact");
+    customerContactInput.addEventListener("input",()=>{
+      const value=customerContactInput.value;
+      if(/^\\d+$/.test(value)&&value.length>10){customerContactInput.value=value.slice(0,10)}
+    });
     const itemsBody=$("#invItems");
     let nextItemId=0;
     function addItem(name,qty,rate){
@@ -117,6 +122,7 @@
       const data=readInvoice();
       if(!data.business){toast("Enter your business or shop name first.");$("#invBusiness").focus();return null}
       if(!data.customer){toast("Enter the customer name first.");$("#invCustomer").focus();return null}
+      if(/^\\d+$/.test(data.customerContact)&&data.customerContact.length!==10){toast("Customer phone number must be exactly 10 digits.");customerContactInput.focus();return null}
       if(!data.number){toast("Enter an invoice number.");$("#invNumber").focus();return null}
       if(!data.rows.some(item=>item.name&&item.qty>0)){toast("Add at least one named item with quantity above zero.");return null}
       if(data.rows.some(item=>item.qty<0||item.rate<0)||data.discountPct<0||data.discountPct>100){toast("Please check quantity, rate and discount values.");return null}
