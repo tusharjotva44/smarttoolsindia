@@ -10,7 +10,7 @@
   function field(label,id,type="number",value="",extra=""){return '<div class="field"><label for="'+id+'">'+label+'</label><input id="'+id+'" type="'+type+'" value="'+value+'" '+extra+'></div>'}
   function selectField(label,id,options){return '<div class="field"><label for="'+id+'">'+label+'</label><select id="'+id+'">'+options.map(o=>'<option value="'+o[0]+'">'+o[1]+'</option>').join("")+'</select></div>'}
   function panel(label,value,note=""){return '<div class="result-panel"><div class="result-label">'+label+'</div><div class="result-value">'+value+'</div>'+(note?'<div class="result-note">'+note+'</div>':"")+'</div>'}
-  function openTool(name){const tools={image:renderImage,pdf:renderPdf,age:renderAge,percentage:renderPercentage,emi:renderEmi,words:renderWords,qr:renderQr,units:renderUnits,gst:renderGst};if(!tools[name])return;modalContent.innerHTML="";modalTitle.textContent=({image:"Image Tools",pdf:"PDF Tools",age:"Age Calculator",percentage:"Percentage Calculator",emi:"EMI Calculator",words:"Word Counter",qr:"QR Code Generator",units:"Unit Converter",gst:"GST Calculator"})[name];modalKicker.textContent="SMARTTOOLS INDIA / "+name.toUpperCase();modal.classList.add("open");modal.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";tools[name]();$("#closeModal").focus()}
+  function openTool(name){const tools={image:renderImage,pdf:renderPdf,age:renderAge,percentage:renderPercentage,emi:renderEmi,words:renderWords,qr:renderQr,units:renderUnits,gst:renderGst,invoice:renderInvoice};if(!tools[name])return;modalContent.innerHTML="";modalTitle.textContent=({image:"Image Tools",pdf:"PDF Tools",age:"Age Calculator",percentage:"Percentage Calculator",emi:"EMI Calculator",words:"Word Counter",qr:"QR Code Generator",units:"Unit Converter",gst:"GST Calculator",invoice:"Invoice Generator"})[name];modalKicker.textContent="SMARTTOOLS INDIA / "+name.toUpperCase();modal.classList.add("open");modal.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";tools[name]();$("#closeModal").focus()}
   function closeTool(){modal.classList.remove("open");modal.setAttribute("aria-hidden","true");document.body.style.overflow="";modalContent.innerHTML=""}
   document.querySelectorAll("[data-tool]").forEach(b=>b.addEventListener("click",()=>openTool(b.dataset.tool)));
   $("#closeModal").addEventListener("click",closeTool);modal.addEventListener("click",e=>{if(e.target===modal)closeTool()});document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modal.classList.contains("open"))closeTool()});
@@ -60,6 +60,109 @@
     rateSelect.addEventListener("change",calculateGst);
     calculateGst();
   }
+
+  function renderInvoice(){
+    const today=localDate();
+    const invoiceNo="INV-"+today.replace(/-/g,"")+"-001";
+    modalContent.innerHTML =
+      '<p class="hint invoice-intro">Create a clean invoice, calculate GST and discount automatically, then download it as a PDF or print it. Your entries stay in this browser.</p>'+
+      '<div class="invoice-section-title">Your business</div>'+
+      '<div class="field-grid">'+field("Business / shop name","invBusiness","text","","placeholder=\"e.g. Shree Enterprise\" required")+field("Phone or email","invContact","text","","placeholder=\"Contact details\"")+field("Business address","invAddress","text","","placeholder=\"Address\"")+field("GSTIN (optional)","invGstin","text","","placeholder=\"GST identification number\" maxlength=\"15\"")+'</div>'+
+      '<div class="invoice-section-title">Bill to</div>'+
+      '<div class="field-grid">'+field("Customer name","invCustomer","text","","placeholder=\"Customer / company name\" required")+field("Customer phone or email","invCustomerContact","text","","placeholder=\"Contact details\"")+field("Customer address","invCustomerAddress","text","","placeholder=\"Billing address\"")+field("Invoice number","invNumber","text",invoiceNo,'maxlength="40"')+field("Invoice date","invDate","date",today)+field("Due date","invDue","date",today)+'</div>'+
+      '<div class="invoice-section-title">Items / services</div>'+
+      '<div class="invoice-items-wrap"><table class="invoice-items-table"><thead><tr><th>Item / service</th><th>Qty</th><th>Rate (₹)</th><th>Amount</th><th></th></tr></thead><tbody id="invItems"></tbody></table></div>'+
+      '<div class="button-row invoice-controls"><button type="button" class="tool-btn secondary" id="invAddItem">+ Add item</button></div>'+
+      '<div class="field-grid invoice-options">'+selectField("GST rate","invGstRate",[["0","No GST (0%)"],["0.25","0.25%"],["3","3%"],["5","5%"],["12","12%"],["18","18%"],["28","28%"]])+field("Discount (%)","invDiscount","number","0",'min="0" max="100" step="any"')+'</div>'+
+      '<div class="field"><label for="invNotes">Notes / payment instructions (optional)</label><textarea id="invNotes" rows="3" placeholder="Thank you for your business. Payment details…"></textarea></div>'+
+      '<div id="invTotals" class="invoice-totals"></div>'+
+      '<div class="button-row invoice-actions"><button type="button" class="tool-btn" id="invDownload">Download PDF ↓</button><button type="button" class="tool-btn secondary" id="invPrint">Print invoice ↗</button></div>'+
+      '<p class="hint">Before sending, verify your business details, invoice number, applicable GST rate and tax rules. This tool creates a basic invoice and does not verify tax compliance.</p>';
+    const itemsBody=$("#invItems");
+    let nextItemId=0;
+    function addItem(name,qty,rate){
+      const id=++nextItemId, tr=document.createElement("tr");
+      tr.dataset.itemId=String(id);
+      tr.innerHTML='<td><input class="inv-item-name" aria-label="Item or service name" type="text" placeholder="Item / service" value="'+(name||"")+'"></td><td><input class="inv-item-qty" aria-label="Quantity" type="number" min="0" step="any" value="'+(qty||"1")+'"></td><td><input class="inv-item-rate" aria-label="Rate in rupees" type="number" min="0" step="any" value="'+(rate||"0")+'"></td><td class="inv-line-total">₹0.00</td><td><button type="button" class="inv-remove" aria-label="Remove item" title="Remove item">×</button></td>';
+      itemsBody.appendChild(tr);
+      tr.querySelectorAll("input").forEach(input=>input.addEventListener("input",updateInvoice));
+      tr.querySelector(".inv-remove").addEventListener("click",()=>{if(itemsBody.children.length===1){tr.querySelector(".inv-item-name").value="";tr.querySelector(".inv-item-qty").value="1";tr.querySelector(".inv-item-rate").value="0"}else tr.remove();updateInvoice()});
+      updateInvoice();
+    }
+    function esc(value){return String(value==null?"":value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]))}
+    function readInvoice(){
+      const rows=Array.from(itemsBody.querySelectorAll("tr")).map(tr=>({
+        name:tr.querySelector(".inv-item-name").value.trim(),
+        qty:Math.max(0,safeNum(tr.querySelector(".inv-item-qty").value)||0),
+        rate:Math.max(0,safeNum(tr.querySelector(".inv-item-rate").value)||0)
+      })).map(item=>({...item,amount:item.qty*item.rate}));
+      const subtotal=rows.reduce((sum,item)=>sum+item.amount,0);
+      const discountPct=Math.min(100,Math.max(0,safeNum($("#invDiscount").value)||0));
+      const discount=subtotal*discountPct/100;
+      const taxable=Math.max(0,subtotal-discount);
+      const gstRate=safeNum($("#invGstRate").value)||0;
+      const tax=taxable*gstRate/100;
+      return {business:$("#invBusiness").value.trim(),contact:$("#invContact").value.trim(),address:$("#invAddress").value.trim(),gstin:$("#invGstin").value.trim(),customer:$("#invCustomer").value.trim(),customerContact:$("#invCustomerContact").value.trim(),customerAddress:$("#invCustomerAddress").value.trim(),number:$("#invNumber").value.trim()||"INVOICE",date:$("#invDate").value,due:$("#invDue").value,notes:$("#invNotes").value.trim(),rows:rows,subtotal:subtotal,discountPct:discountPct,discount:discount,taxable:taxable,gstRate:gstRate,tax:tax,total:taxable+tax};
+    }
+    function updateInvoice(){
+      const data=readInvoice();
+      Array.from(itemsBody.querySelectorAll("tr")).forEach((tr,i)=>{const item=data.rows[i];tr.querySelector(".inv-line-total").textContent="₹"+fmt(item.amount,2)});
+      $("#invTotals").innerHTML='<div class="invoice-total-row"><span>Subtotal</span><b>₹'+fmt(data.subtotal,2)+'</b></div>'+
+        '<div class="invoice-total-row"><span>Discount ('+fmt(data.discountPct,2)+'%)</span><b>− ₹'+fmt(data.discount,2)+'</b></div>'+
+        '<div class="invoice-total-row"><span>Taxable amount</span><b>₹'+fmt(data.taxable,2)+'</b></div>'+
+        '<div class="invoice-total-row"><span>GST ('+fmt(data.gstRate,2)+'%)</span><b>₹'+fmt(data.tax,2)+'</b></div>'+
+        '<div class="invoice-total-row invoice-grand-total"><span>Total due</span><b>₹'+fmt(data.total,2)+'</b></div>';
+    }
+    function validInvoice(){
+      const data=readInvoice();
+      if(!data.business){toast("Enter your business or shop name first.");$("#invBusiness").focus();return null}
+      if(!data.customer){toast("Enter the customer name first.");$("#invCustomer").focus();return null}
+      if(!data.number){toast("Enter an invoice number.");$("#invNumber").focus();return null}
+      if(!data.rows.some(item=>item.name&&item.qty>0)){toast("Add at least one named item with quantity above zero.");return null}
+      if(data.rows.some(item=>item.qty<0||item.rate<0)||data.discountPct<0||data.discountPct>100){toast("Please check quantity, rate and discount values.");return null}
+      return data;
+    }
+    function buildInvoiceHtml(data){
+      const rows=data.rows.filter(item=>item.name&&item.qty>0).map(item=>'<tr><td>'+esc(item.name)+'</td><td>'+fmt(item.qty,3)+'</td><td>₹'+fmt(item.rate,2)+'</td><td>₹'+fmt(item.amount,2)+'</td></tr>').join("");
+      const detail=(label,value)=>value?'<p><strong>'+label+':</strong> '+esc(value)+'</p>':"";
+      return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(data.number)+'</title><style>body{font:14px Arial,sans-serif;color:#222;margin:36px}h1{color:#d95e0b;margin-bottom:6px}h2{font-size:16px;margin-top:28px}p{margin:5px 0;line-height:1.45}.columns{display:flex;gap:40px;justify-content:space-between}.columns>div{flex:1}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border-bottom:1px solid #ddd;padding:10px 8px;text-align:left}th{background:#fff4eb}.totals{width:min(100%,340px);margin:20px 0 0 auto}.totals p{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:7px 0}.totals .grand{font-size:19px;font-weight:bold;color:#d95e0b}.notes{white-space:pre-wrap;margin-top:24px}@media print{body{margin:15mm}}</style></head><body><h1>INVOICE</h1><p><strong>Invoice #:</strong> '+esc(data.number)+'</p><p><strong>Date:</strong> '+esc(data.date||"—")+' &nbsp; <strong>Due:</strong> '+esc(data.due||"—")+'</p><div class="columns"><div><h2>From</h2><p><strong>'+esc(data.business)+'</strong></p>'+detail("Address",data.address)+detail("Contact",data.contact)+detail("GSTIN",data.gstin)+'</div><div><h2>Bill to</h2><p><strong>'+esc(data.customer)+'</strong></p>'+detail("Address",data.customerAddress)+detail("Contact",data.customerContact)+'</div></div><table><thead><tr><th>Item / service</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead><tbody>'+rows+'</tbody></table><div class="totals"><p><span>Subtotal</span><strong>₹'+fmt(data.subtotal,2)+'</strong></p><p><span>Discount ('+fmt(data.discountPct,2)+'%)</span><strong>− ₹'+fmt(data.discount,2)+'</strong></p><p><span>Taxable amount</span><strong>₹'+fmt(data.taxable,2)+'</strong></p><p><span>GST ('+fmt(data.gstRate,2)+'%)</span><strong>₹'+fmt(data.tax,2)+'</strong></p><p class="grand"><span>Total due</span><strong>₹'+fmt(data.total,2)+'</strong></p></div>'+(data.notes?'<div class="notes"><h2>Notes / payment instructions</h2>'+esc(data.notes)+'</div>':"")+'<p style="margin-top:32px;color:#777">Thank you for your business.</p></body></html>';
+    }
+    $("#invAddItem").onclick=()=>addItem("","1","0");
+    ["invDiscount","invGstRate","invBusiness","invContact","invAddress","invGstin","invCustomer","invCustomerContact","invCustomerAddress","invNumber","invDate","invDue","invNotes"].forEach(id=>$("#"+id).addEventListener("input",updateInvoice));
+    $("#invDownload").onclick=()=>{
+      const data=validInvoice();if(!data)return;
+      if(!window.jspdf||!window.jspdf.jsPDF){toast("PDF library did not load. Please check your internet and try Print invoice.");return}
+      const doc=new window.jspdf.jsPDF({unit:"mm",format:"a4"});
+      const left=15,right=195;let y=18;
+      doc.setFont("helvetica","bold");doc.setFontSize(22);doc.setTextColor(217,94,11);doc.text("INVOICE",left,y);
+      doc.setFontSize(10);doc.setTextColor(45,45,45);y+=9;doc.text("Invoice #: "+data.number,left,y);doc.text("Invoice date: "+(data.date||"-"),right,y,{align:"right"});y+=6;doc.text("Due date: "+(data.due||"-"),right,y,{align:"right"});
+      y+=9;doc.setFont("helvetica","bold");doc.text("FROM",left,y);doc.text("BILL TO",110,y);y+=6;doc.setFont("helvetica","normal");
+      const from=[data.business,data.address,data.contact,data.gstin?"GSTIN: "+data.gstin:""].filter(Boolean);
+      const to=[data.customer,data.customerAddress,data.customerContact].filter(Boolean);
+      const fromLines=doc.splitTextToSize(from.join("\n"),80),toLines=doc.splitTextToSize(to.join("\n"),75);
+      doc.text(fromLines,left,y);doc.text(toLines,110,y);y+=Math.max(fromLines.length,toLines.length)*5+7;
+      const tableRows=data.rows.filter(item=>item.name&&item.qty>0).map(item=>[item.name,fmt(item.qty,3),"Rs. "+fmt(item.rate,2),"Rs. "+fmt(item.amount,2)]);
+      if(typeof doc.autoTable==="function"){
+        doc.autoTable({startY:y,head:[["Item / service","Qty","Rate","Amount"]],body:tableRows,theme:"grid",styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[255,240,228],textColor:[80,55,40]},columnStyles:{1:{halign:"right"},2:{halign:"right"},3:{halign:"right"}}});
+        y=doc.lastAutoTable.finalY+8;
+      }else{
+        doc.setFont("helvetica","bold");doc.text("Item / service",left,y);doc.text("Qty",120,y,{align:"right"});doc.text("Rate",153,y,{align:"right"});doc.text("Amount",right,y,{align:"right"});y+=6;doc.setFont("helvetica","normal");
+        tableRows.forEach(row=>{const lines=doc.splitTextToSize(row[0],85);if(y+Math.max(lines.length*4,6)>270){doc.addPage();y=18}doc.text(lines,left,y);doc.text(row[1],120,y,{align:"right"});doc.text(row[2],153,y,{align:"right"});doc.text(row[3],right,y,{align:"right"});y+=Math.max(lines.length*4,6)+2});
+        y+=3;
+      }
+      if(y>250){doc.addPage();y=18}
+      doc.setFont("helvetica","normal");doc.setFontSize(10);
+      [["Subtotal","Rs. "+fmt(data.subtotal,2)],["Discount ("+fmt(data.discountPct,2)+"%)","- Rs. "+fmt(data.discount,2)],["Taxable amount","Rs. "+fmt(data.taxable,2)],["GST ("+fmt(data.gstRate,2)+"%)","Rs. "+fmt(data.tax,2)]].forEach(pair=>{doc.text(pair[0],125,y);doc.text(pair[1],right,y,{align:"right"});y+=6});
+      doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor(217,94,11);doc.text("TOTAL DUE",125,y+2);doc.text("Rs. "+fmt(data.total,2),right,y+2,{align:"right"});y+=12;
+      if(data.notes){doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(45,45,45);doc.text("Notes / payment instructions",left,y);y+=6;doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(doc.splitTextToSize(data.notes,175),left,y)}
+      doc.save((data.number.replace(/[^a-z0-9_-]/gi,"-")||"invoice")+".pdf");
+      toast("Invoice PDF downloaded.");
+    };
+    $("#invPrint").onclick=()=>{const data=validInvoice();if(!data)return;const win=window.open("","_blank");if(!win){toast("Please allow pop-ups to print the invoice.");return}win.document.open();win.document.write(buildInvoiceHtml(data));win.document.close();win.focus();setTimeout(()=>win.print(),350)};
+    addItem("Product / service","1","1000");
+    updateInvoice();
+  }
+
   function renderWords(){
     modalContent.innerHTML='<div class="field"><label for="wordText">Paste or type your text</label><textarea id="wordText" placeholder="Start typing here…"></textarea></div><div class="result-grid"><div class="result-chip"><span>Words</span><b id="wordCount">0</b></div><div class="result-chip"><span>Characters</span><b id="charCount">0</b></div><div class="result-chip"><span>No spaces</span><b id="charNoSpace">0</b></div><div class="result-chip"><span>Sentences</span><b id="sentenceCount">0</b></div><div class="result-chip"><span>Paragraphs</span><b id="paragraphCount">0</b></div><div class="result-chip"><span>Reading time</span><b id="readTime">0 min</b></div></div><div class="button-row"><button class="tool-btn secondary" id="clearWords">Clear text</button><button class="tool-btn secondary" id="copyWords">Copy stats</button></div>';
     const input=$("#wordText");function count(){const s=input.value.trim(),words=s?s.split(/\s+/u).filter(Boolean):[],sentences=s?s.split(/[.!?]+(?:\s|$)/u).filter(x=>x.trim()).length:0,paragraphs=s?s.split(/\n\s*\n/u).filter(x=>x.trim()).length:0;$("#wordCount").textContent=fmt(words.length,0);$("#charCount").textContent=fmt(input.value.length,0);$("#charNoSpace").textContent=fmt(input.value.replace(/\s/g,"").length,0);$("#sentenceCount").textContent=fmt(sentences,0);$("#paragraphCount").textContent=fmt(paragraphs,0);$("#readTime").textContent=words.length?Math.max(1,Math.ceil(words.length/200))+" min":"0 min"}input.addEventListener("input",count);$("#clearWords").onclick=()=>{input.value="";count();input.focus()};$("#copyWords").onclick=()=>{const t="Words: "+$("#wordCount").textContent+"\nCharacters: "+$("#charCount").textContent+"\nCharacters (no spaces): "+$("#charNoSpace").textContent+"\nSentences: "+$("#sentenceCount").textContent+"\nParagraphs: "+$("#paragraphCount").textContent+"\nReading time: "+$("#readTime").textContent;copyText(t)};
